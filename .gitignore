@@ -1,0 +1,19 @@
+# Secrets
+.env
+
+# Python bytecode cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual Environment Stuff
+venv/
+.venv/
+env/
+
+# Logs stuff
+logs/
+
+# OS stuff thats kinds like junk
+.DS_Store
+Thumbs.db
