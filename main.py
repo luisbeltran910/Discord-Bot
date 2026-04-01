@@ -22,7 +22,6 @@ async def main() -> None:
     bot = MusicBot(config)
 
     async with bot:
-        log.info(f"Token starts with: {config.discord_token[:10]}")
         await bot.start(config.discord_token)
 
 if __name__ == "__main__":
