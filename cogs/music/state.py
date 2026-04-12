@@ -87,7 +87,8 @@ class GuildMusicState:
                 user_message=f"❌ La cola esta llena ({self.config.max_queue_size} pistas maximas permitidas)."
             )
         self.queue.append(song)
-        self._next_event.set()
+        if not self.is_playing:
+            self._next_event.set()
         return len(self.queue)
 
 
@@ -98,7 +99,8 @@ class GuildMusicState:
                 break
             self.queue.append(song)
             added += 1
-        self._next_event.set()
+        if not self.is_playing:
+            self._next_event.set()
         return added
 
 
@@ -161,7 +163,6 @@ class GuildMusicState:
             )
 
             await self._next_event.wait()
-
             self.current = None
 
     def _get_next(self) -> Song | None:
