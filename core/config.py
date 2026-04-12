@@ -32,6 +32,7 @@ class Config:
     max_playlist_size: int = 50
     welcome_channel: str = "general"
     goodbye_channel: str = "general"
+    ffmpeg_path: str = "ffmpeg"
 
     @property
     def spotify_enabled(self) -> bool:
@@ -49,4 +50,5 @@ def load_config() -> Config:
         max_playlist_size=int(_optional("MAX_PLAYLIST_SIZE", "50")),
         welcome_channel=_optional("WELCOME_CHANNEL", "general"),
         goodbye_channel=_optional("GOODBYE_CHANNEL", "general"),
+        ffmpeg_path=_optional("FFMPEG_PATH", "ffmpeg"),
     )
