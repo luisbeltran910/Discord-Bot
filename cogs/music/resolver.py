@@ -43,8 +43,9 @@ _SPOTIFY_PLAYLIST = re.compile(r"open\.spotify\.com/playlist/([A-Za-z0-9]+)")
 _YT_PLAYLIST = re.compile(r"youtube\.com/playlist\?list=")
 
 # Our whole audio source or where we make it
-def make_audio_source(stream_url: str, volume: float = 0.5) -> discord.PCMVolumeTransformer:
-    raw = discord.FFmpegPCMAudio(stream_url, **FFMPEG_OPTIONS)
+def make_audio_source(stream_url: str, volume: float = 0.5, ffmpeg_path: str = "ffmpeg") -> discord.PCMVolumeTransformer:
+    raw = discord.FFmpegPCMAudio(stream_url, executable=ffmpeg_path, before_options=FFMPEG_OPTIONS["before_options"],
+          options=FFMPEG_OPTIONS["options"])
     return discord.PCMVolumeTransformer(raw, volume=volume)
 
 
@@ -84,7 +85,7 @@ class Resolver:
         if _YT_PLAYLIST.search(query):
             return await self._yt_playlist(query, requester, max_entries, Song)
         
-        return [await self._single(query, requester, sorted)]
+        return [await self._single(query, requester, Song)]
     
     async def _run_ytdl(self, instance: yt_dlp.YoutubeDL, query: str) -> dict:
         loop = asyncio.get_event_loop()
@@ -130,7 +131,7 @@ class Resolver:
     ) -> list[Song]:
         info = await self._run_ytdl(YTDL_PLAYLIST, url)
 
-        if not info or "entrties" not in info:
+        if not info or "entries" not in info:
             raise TrackError(user_message="❌ No se pudo cargar el playlist.")
         
         entries = info["entries"]
@@ -157,37 +158,49 @@ class Resolver:
         return songs
     
     async def _spotify_track(self, url: str, requester: discord.Member, Song) -> Song:
-        if not self._spotify:
+        spotify_client = self._spotify
+
+        if spotify_client is None:
             raise SpotifyError(
                 user_message="❌ Spotify todavia no ha sido configurado. Agregalos en el archivo .env!"
             )
         
-        track_id = _SPOTIFY_TRACK.search(url).group(1)
+        match = _SPOTIFY_TRACK.search(url)
+        if not match:
+            raise SpotifyError(user_message="❌ URL de Spotify no válida.")
+        
+        track_id = match.group(1)
         loop = asyncio.get_event_loop()
 
         try:
-            track = await loop.run_in_executor(None, lambda: self._spotify.track(track_id))
+            track = await loop.run_in_executor(
+                None, 
+                lambda: spotify_client.track(track_id)
+                )
         except Exception as e:
             raise SpotifyError(
                 user_message="❌ No se pudo obtener la pista de spotify.",
                 log_message=f"Spotify API error: {e}",
             )
         
+        if track is None:
+            raise SpotifyError(user_message="❌ no se encontro la pista")
+        
         artist = track["artists"][0]["name"]
         title= track["name"]
         thumbnail = track["album"]["images"][0]["url"] if track["album"]["images"] else None
         duration_ms = track.get("duration_ms", 0)
 
-        song = await self._single(f"ytsearch: {artist} - {title} audio", requester, Song)
+        song_data = await self._single(f"ytsearch:{artist} - {title} audio", requester, Song)
 
         return Song(
-            stream_url=song.stream_url,
-            page_url=song.page_url,
+            stream_url=song_data.stream_url,
+            page_url=song_data.page_url,
             title=f"{artist} - {title}",
-            duration_ms=duration_ms // 1000,
+            duration=duration_ms // 1000,
             requester=requester,
-            thumbnail=thumbnail or song.thumbnail,
-            source="spotify->yt",
+            thumbnail=thumbnail or song_data.thumbnail,
+            source="Spotify-YT",
         )
 
     async def _spotify_playlist(
@@ -207,6 +220,11 @@ class Resolver:
             result = await loop.run_in_executor(
                 None,
                 lambda: self._spotify.playlist_tracks(playlist_id, limit=max_entries or 50)
+            )
+        except Exception as e:
+            raise SpotifyError(
+                user_message="❌ Error al obtener el playlist de Spotify.",
+                log_message=f"Spotify playlist error: {e}",
             )
         
         songs = []

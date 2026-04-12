@@ -17,8 +17,6 @@ EXTENSIONS = [
 
 class MusicBot(commands.Bot):
     def __init__(self, config: Config):
-        self.config = config
-
         intents = discord.Intents.default()
         intents.members = True
         intents.message_content = True
@@ -27,6 +25,8 @@ class MusicBot(commands.Bot):
             command_prefix=commands.when_mentioned_or(config.prefix),
             intents=intents,
         )
+
+        self.config = config
 
     async def setup_hook(self) -> None:
         log.info("Loading extensions...")
@@ -37,12 +37,9 @@ class MusicBot(commands.Bot):
                 log.info(f" Enabled: {ext}")
             except Exception:
                 log.exception(f" Disabled: {ext}")
-
-            try:
-                synced = await self.tree.sync()
-                log.info(f"Synced {len(synced)} slash command(s)")
-            except Exception:
-                log.exception("Failed to sync slash commands")
+           
+        synced = await self.tree.sync()
+        log.info(f"Synced {len(synced)} slash command(s)")
 
     async def on_ready(self) -> None:
         log.info(f"Logged in as {self.user} (ID: {self.user.id})")

@@ -25,7 +25,7 @@ class Song:
         self.duration = duration
         self.requester = requester
         self.thumbnail = thumbnail
-        self,source = source
+        self.source = source
         
     @property
     def duration_str(self) -> str:
@@ -40,11 +40,11 @@ class Song:
         embed = discord.Embed(
             title=title,
             description=f"**[{self.title}]({self.page_url})**",
-            color=discord.color.blurple(),
+            color=discord.Color.blurple(),
         )
         embed.add_field(name="Duration", value=self.duration_str, inline=True)
         embed.add_field(name="Source", value=self.source.title(), inline=True)
-        embed.add_fielf(name="Requested by", value=self.requester.mention, inline=True)
+        embed.add_field(name="Requested by", value=self.requester.mention, inline=True)
         if self.thumbnail:
             embed.set_thumbnail(url=self.thumbnail)
         return embed

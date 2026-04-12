@@ -14,22 +14,22 @@ from core.errors import BotError
 log = logging.getLogger(__name__)
 
 class ErrorHandler(commands.Cog):
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
-        bot.tree.on_error = self.on_app_command_error
+        def __init__(self, bot: commands.Bot):
+            self.bot = bot
+            bot.tree.on_error = self._on_app_command_error
 
         @commands.Cog.listener()
         async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
             original = getattr(error, "original", error)
             await self._handle(ctx, original, is_interaction=False)
 
-        async def on_app_command_error(
+        async def _on_app_command_error(
                 self,
                 interaction: discord.Interaction,
                 error: app_commands.AppCommandError,
         ):
             original = getattr(error, "original", error)
-            await self.handle(interaction, original, is_interaction=True)
+            await self._handle(interaction, original, is_interaction=True)
 
         async def _handle(self, ctx_or_interaction, error: Exception, is_interaction: bool):
             embed = discord.Embed(color=discord.Color.red())

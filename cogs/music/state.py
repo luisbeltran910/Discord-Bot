@@ -149,7 +149,7 @@ class GuildMusicState:
             self.current = next_song
 
             from cogs.music.resolver import make_audio_source
-            source = make_audio_source(next_song.stream_url, self.volume)
+            source = make_audio_source(next_song.stream_url, self.volume, self.config.ffmpeg_path)
 
             loop = self.bot.loop
             self.voice_client.play(
